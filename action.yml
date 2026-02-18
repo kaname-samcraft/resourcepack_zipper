@@ -41,5 +41,7 @@ runs:
       mv $FILE.zip $NEW_FILE.zip
       FILE=$NEW_FILE
       git tag $LATEST -f
+      git push origin $LATEST -f
       gh release view "$LATEST" || gh release create "$LATEST"
       gh release upload "$LATEST" "$FILE.zip" --clobber
+
