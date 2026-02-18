@@ -1,0 +1,52 @@
+name: zipper
+on:
+  workflow_call:
+    inputs:
+      latest_name:
+        type: string
+        default: "latest"
+      version_path:
+        type: string
+        default: ""
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      latest_name: "latest"
+      version_path: ""
+    steps:
+      - name: checkout
+        id: checkout
+        uses: actions/checkout@v4
+      - name: release
+        id: release
+        run: |
+
+          #変数の用意
+          LATEST=${{env.latest_name}}
+          NAME=${GITHUB_REPOSITORY#*/}
+          VERSION=$GITHUB_REF_NAME
+          FILE=$NAME
+
+          #ディスクリプションにバージョンを含める
+          jq --arg ver "$VERSION" '.pack.description${{env.version_path}} = $ver' pack.mcmeta > tmp.mcmeta && mv tmp.mcmeta pack.mcmeta
+
+          #zipファイル生成
+          [ -f "$FILE.zip" ] && rm "$FILE.zip"
+          zip -r "$FILE.zip" ./ -x ".github/*" ".git/*"
+
+          #version-release
+          NEW_FILE=$NAME-$VERSION
+          mv $FILE.zip $NEW_FILE.zip
+          FILE=$NEW_FILE
+          gh release create "$VERSION"
+          gh release upload "$VERSION" "$FILE.zip"
+
+          #latest-release
+          NEW_FILE=$NAME-$LATEST
+          mv $FILE.zip $NEW_FILE.zip
+          FILE=$NEW_FILE
+          git tag $LATEST -f
+          gh release view "$LATEST" || gh release create "$LATEST"
+          gh release upload "$LATEST" "$FILE.zip" --clobber
