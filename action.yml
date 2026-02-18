@@ -11,10 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-      latest_name: "latest"
-      version_path: ""
     steps:
       - name: checkout
         id: checkout
@@ -50,3 +46,4 @@ jobs:
           git tag $LATEST -f
           gh release view "$LATEST" || gh release create "$LATEST"
           gh release upload "$LATEST" "$FILE.zip" --clobber
+
